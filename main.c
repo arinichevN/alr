@@ -273,6 +273,7 @@ void serverRun(int *state, int init_state) {
     switch (buf_in[1]) {
         case ACP_CMD_STOP:
         case ACP_CMD_START:
+        case ACP_CMD_RESET:
         case ACP_CMD_ALR_PROG_ENABLE:
         case ACP_CMD_ALR_PROG_DISABLE:
         case ACP_CMD_ALR_PROG_GET_DATA_RUNTIME:
@@ -348,6 +349,33 @@ void serverRun(int *state, int init_state) {
                     break;
                 }
                 case ACP_QUANTIFIER_SPECIFIC:
+                    for (i = 0; i < i1l.length; i++) {
+                        addProgById(i1l.item[i], &prog_list, &peer_list, db_data_path);
+                    }
+                    break;
+            }
+            return;
+        case ACP_CMD_RESET:
+            switch (buf_in[0]) {
+                case ACP_QUANTIFIER_BROADCAST:
+                {
+
+                    PROG_LIST_LOOP_DF
+                    PROG_LIST_LOOP_ST
+                    curr->state = OFF;
+                    deleteProgById(curr->id, &prog_list, db_data_path);
+                    PROG_LIST_LOOP_SP
+                    loadAllProg(db_data_path, &prog_list, &peer_list);
+                    break;
+                }
+                case ACP_QUANTIFIER_SPECIFIC:
+                    for (i = 0; i < i1l.length; i++) {
+                        Prog *curr = getProgById(i1l.item[i], &prog_list);
+                        if (curr != NULL) {
+                            curr->state = OFF;
+                            deleteProgById(i1l.item[i], &prog_list, db_data_path);
+                        }
+                    }
                     for (i = 0; i < i1l.length; i++) {
                         addProgById(i1l.item[i], &prog_list, &peer_list, db_data_path);
                     }
