@@ -112,7 +112,7 @@ int bufCatProgRuntime(const Prog *item, char *buf, size_t buf_size) {
     char q[LINE_SIZE];
     char *state = getStateStr(item->state);
     struct timespec tm_rest = getTimeRestCope(item);
-    snprintf(q, sizeof q, "%d_%s_%ld\n",
+    snprintf(q, sizeof q, "%d" ACP_DELIMITER_COLUMN_STR "%s" ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_ROW_STR,
             item->id,
             state,
             tm_rest.tv_sec
@@ -125,7 +125,7 @@ int bufCatProgRuntime(const Prog *item, char *buf, size_t buf_size) {
 
 int bufCatProgInit(const Prog *item, char *buf, size_t buf_size) {
     char q[LINE_SIZE];
-    snprintf(q, sizeof q, "%d_%s_%f_%f_%ld_%ld_%d_%d_%d\n",
+    snprintf(q, sizeof q, "%d" ACP_DELIMITER_COLUMN_STR "%s" ACP_DELIMITER_COLUMN_STR "%f" ACP_DELIMITER_COLUMN_STR "%f" ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_ROW_STR,
             item->id,
             item->description,
             item->good_value,
@@ -143,15 +143,13 @@ int bufCatProgInit(const Prog *item, char *buf, size_t buf_size) {
 }
 
 int sendStrPack(char qnf, char *cmd) {
-    extern size_t sock_buf_size;
     extern Peer peer_client;
-    return acp_sendStrPack(qnf, cmd, sock_buf_size, &peer_client);
+    return acp_sendStrPack(qnf, cmd, &peer_client);
 }
 
 int sendBufPack(char *buf, char qnf, char *cmd_str) {
-    extern size_t sock_buf_size;
     extern Peer peer_client;
-    return acp_sendBufPack(buf, qnf, cmd_str, sock_buf_size, &peer_client);
+    return acp_sendBufPack(buf, qnf, cmd_str, &peer_client);
 }
 
 void sendStr(const char *s, uint8_t *crc) {

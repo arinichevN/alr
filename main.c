@@ -81,7 +81,7 @@ int readSettings() {
 }
 
 int initData() {
-    if (!config_getPeerList(&peer_list, &sock_fd_tf, db_public_path)) {
+    if (!config_getPeerList(&peer_list, &sock_fd_tf, sock_buf_size, db_public_path)) {
         FREE_LIST(&peer_list);
         return 0;
     }
@@ -132,6 +132,7 @@ void initApp() {
     if (!readSettings()) {
         exit_nicely_e("initApp: failed to read settings\n");
     }
+    peer_client.sock_buf_size = sock_buf_size;
     if (!initPid(&pid_file, &proc_id, pid_path)) {
         exit_nicely_e("initApp: failed to initialize pid\n");
     }
@@ -171,7 +172,6 @@ void serverRun(int *state, int init_state) {
     char buf_out[sock_buf_size];
     uint8_t crc;
     int i, j;
-    char q[LINE_SIZE];
     crc = 0;
     memset(buf_in, 0, sizeof buf_in);
     acp_initBuf(buf_out, sizeof buf_out);
@@ -181,9 +181,9 @@ void serverRun(int *state, int init_state) {
 #endif
     }
 #ifdef MODE_DEBUG
-    dumpBuf(buf_in, sizeof buf_in);
+    acp_dumpBuf(buf_in, sizeof buf_in);
 #endif    
-    if (!crc_check(buf_in, sizeof buf_in)) {
+    if (!acp_crc_check(buf_in, sizeof buf_in)) {
 #ifdef MODE_DEBUG
         fputs("WARNING: serverRun: crc check failed\n", stderr);
 #endif
@@ -599,7 +599,7 @@ int readFTS(SensorFTS *s) {
  */
 
 int readFTS(SensorFTS *s) {
-    return acp_readSensorFTS(s, sock_buf_size);
+    return acp_readSensorFTS(s);
 }
 
 void progControl(Prog *item) {
@@ -742,7 +742,7 @@ void *threadFunction(void *arg) {
                         }
                     }
                     if (ton_ts(call_interval, &tmr_call)) {
-                        acp_makeCall(cell_peer, &pn_list.item[LINE_SIZE * phone_ind], sock_buf_size);
+                        acp_makeCall(cell_peer, &pn_list.item[LINE_SIZE * phone_ind]);
                     }
                     break;
                 case DISABLE:

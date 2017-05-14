@@ -310,12 +310,12 @@ int callHuman(Prog *item, char *message, Peer *peer, const char *db_path) {
     size_t i;
     for (i = 0; i < pn_list.length; i++) {
         if (item->sms) {
-            acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], message, sock_buf_size);
+            acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], message);
         }
     }
     for (i = 0; i < pn_list.length; i++) {
         if (item->ring) {
-            acp_makeCall(peer, &pn_list.item[LINE_SIZE * i], sock_buf_size);
+            acp_makeCall(peer, &pn_list.item[LINE_SIZE * i]);
         }
     }
     FREE_LIST(&pn_list);
@@ -336,7 +336,7 @@ int sendSum(Peer *peer, const char *db_log_path, const char *db_public_path) {
         fputs("sendSum: file not found\n", stderr);
 #endif
         for (i = 0; i < pn_list.length; i++) {
-          //  acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], "net dostupa k jurnalu trevog!", sock_buf_size);
+          //  acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], "net dostupa k jurnalu trevog!");
         }
         FREE_LIST(&pn_list);
         return 1;
@@ -364,7 +364,7 @@ int sendSum(Peer *peer, const char *db_log_path, const char *db_public_path) {
     char msg[LINE_SIZE];
     snprintf(msg, sizeof msg, "kolichestvo trevog v jurnale: %d", n);
     for (i = 0; i < pn_list.length; i++) {
-        acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], msg, sock_buf_size);
+        acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], msg);
     }
     FREE_LIST(&pn_list);
     return 1;
