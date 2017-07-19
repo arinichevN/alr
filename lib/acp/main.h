@@ -27,6 +27,8 @@
 #define ACP_DELIMITER_CRC  '\r'
 #define ACP_DELIMITER_PACKET  '\0'
 
+#define ACP_FLOAT_FORMAT "%.3f"
+
 typedef struct {
     char id[NAME_SIZE];
     int *fd;
@@ -220,6 +222,8 @@ extern char acp_recvPing(Peer *peer);
 extern int acp_recvFTS(FTSList *list, char qnf, char *cmd, size_t buf_size, size_t list_max_size, int fd);
 
 extern int acp_recvI2(I2List *list, char qnf, char *cmd, size_t buf_size, size_t list_max_size, int fd);
+
+extern int acp_catFTS(int id, float value, struct timespec tm, int state, char *buf, size_t buf_size);
 
 extern void freePeer(PeerList *list);
 

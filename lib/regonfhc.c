@@ -9,7 +9,7 @@ static void controlEM(RegOnfHCEM *item, float output) {
     }
 }
 
-void regonfhc_onf(RegOnfHC *item) {
+void regonfhc_control(RegOnfHC *item) {
     switch (item->state) {
         case REG_INIT:
             item->tmr.ready = 0;

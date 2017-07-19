@@ -31,7 +31,7 @@ typedef struct {
     Ton_ts tmr;
 } RegPIDOnfHC;
 
-extern void regpidonfhc_onf(RegPIDOnfHC *item);
+extern void regpidonfhc_control(RegPIDOnfHC *item);
 
 extern void regpidonfhc_enable(RegPIDOnfHC *item);
 

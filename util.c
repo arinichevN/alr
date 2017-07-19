@@ -191,7 +191,7 @@ void printAll() {
     sendStr(q, &crc);
     snprintf(q, sizeof q, "phone_number_group_id: %d\n", phone_number_group_id);
     sendStr(q, &crc);
-    snprintf(q, sizeof q, "cell_peer_id: %s\n", cell_peer_id);
+    snprintf(q, sizeof q, "call_peer_id: %s\n", call_peer_id);
     sendStr(q, &crc);
     snprintf(q, sizeof q, "phone_number_group_id: %d\n", phone_number_group_id);
     sendStr(q, &crc);

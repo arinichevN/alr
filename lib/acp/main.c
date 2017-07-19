@@ -1083,7 +1083,14 @@ int acp_makeCall(Peer *peer, char *phone) {
     }
 
 }
-
+int acp_catFTS(int id, float value, struct timespec tm, int state, char *buf, size_t buf_size) {
+    char q[LINE_SIZE];
+    snprintf(q, sizeof q, "%d" ACP_DELIMITER_COLUMN_STR ACP_FLOAT_FORMAT ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_ROW_STR, id, value,tm.tv_sec,tm.tv_nsec, state);
+    if (bufCat(buf, q, buf_size) == NULL) {
+        return 0;
+    }
+    return 1;
+}
 void freePeer(PeerList *list) {
     free(list->item);
     list->item = NULL;

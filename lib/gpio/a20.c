@@ -166,13 +166,8 @@ int checkPin(int pin) {
 }
 
 int gpioSetup() {
-    if (geteuid() != 0) {
-        fputs("gpioSetup: root user expected\n", stderr);
-        return 0;
-    }
-
     // Open the master /dev/memory device
-
+    int gpio_fd;
     if ((gpio_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC)) < 0) {
         fputs("gpioSetup: Unable to open /dev/mem\n", stderr);
         return 0;
@@ -183,11 +178,13 @@ int gpioSetup() {
         fputs("gpioSetup: mmap failed\n", stderr);
         return 0;
     }
+    close(gpio_fd);
     makeGpioDataOffset();
     return 1;
 }
+
 int gpioFree() {
-    return close(gpio_fd);
+
 }
 
 

@@ -35,11 +35,11 @@ int phone_ind = 0;
 Mutex progl_mutex = {.created = 0, .attr_initialized = 0};
 Mutex alert_mutex = {.created = 0, .attr_initialized = 0};
 char alert_state = OFF;
-int log_limit = 0;
+unsigned int log_limit = 0;
 PeerList peer_list = {NULL, 0};
 ProgList prog_list = {NULL, NULL, 0};
-Peer *cell_peer = NULL;
-char cell_peer_id[NAME_SIZE];
+Peer *call_peer = NULL;
+char call_peer_id[NAME_SIZE];
 Ton_ts tmr_sum;
 
 int phone_number_group_id = -1;
@@ -55,8 +55,10 @@ int readSettings() {
 #endif
         return 0;
     }
+    char s[LINE_SIZE];
+    fgets(s, LINE_SIZE, stream);
     int n;
-    n = fscanf(stream, "%d\t%255s\t%d\t%ld\t%ld\t%ld\t%ld\t%d\t%ld\t%d\t%32s\t%255s\t%255s\t%255s\n",
+    n = fscanf(stream, "%d\t%255s\t%d\t%ld\t%ld\t%ld\t%ld\t%u\t%ld\t%d\t%32s\t%255s\t%255s\t%255s\n",
             &sock_port,
             pid_path,
             &sock_buf_size,
@@ -67,16 +69,37 @@ int readSettings() {
             &log_limit,
             &sum_interval.tv_sec,
             &phone_number_group_id,
-            cell_peer_id,
+            call_peer_id,
             db_data_path,
             db_public_path,
             db_log_path
             );
     if (n != 14) {
         fclose(stream);
+#ifdef MODE_DEBUG
+        fputs("ERROR: readSettings: bad row format\n", stderr);
+#endif
         return 0;
     }
     fclose(stream);
+#ifdef MODE_DEBUG
+    printf("readSettings: \n\tsock_port: %d, \n\tpid_path: %s, \n\tsock_buf_size: %d, \n\tcycle_duration: %ld sec %ld nsec, \n\tcope_duration: %ld sec, \n\tcall_interval: %ld sec, \n\tlog_limit: %u, \n\tsum_interval: %ld sec, \n\tphone_number_group_id: %d, \n\tcall_peer_id: %s, \n\tdb_data_path: %s, \n\tdb_public_path: %s, \n\tdb_log_path: %s\n",
+            sock_port,
+            pid_path,
+            sock_buf_size,
+            cycle_duration.tv_sec,
+            cycle_duration.tv_nsec,
+            cope_duration.tv_sec,
+            call_interval.tv_sec,
+            log_limit,
+            sum_interval.tv_sec,
+            phone_number_group_id,
+            call_peer_id,
+            db_data_path,
+            db_public_path,
+            db_log_path
+            );
+#endif
     return 1;
 }
 
@@ -85,8 +108,8 @@ int initData() {
         FREE_LIST(&peer_list);
         return 0;
     }
-    cell_peer = getPeerById(cell_peer_id, &peer_list);
-    if (cell_peer == NULL) {
+    call_peer = getPeerById(call_peer_id, &peer_list);
+    if (call_peer == NULL) {
         FREE_LIST(&peer_list);
         return 0;
     }
@@ -136,22 +159,6 @@ void initApp() {
     if (!initPid(&pid_file, &proc_id, pid_path)) {
         exit_nicely_e("initApp: failed to initialize pid\n");
     }
-#ifdef MODE_DEBUG
-    printf("initApp: PID: %d\n", proc_id);
-    printf("initApp: sock_port: %d\n", sock_port);
-    printf("initApp: sock_buf_size: %d\n", sock_buf_size);
-    printf("initApp: pid_path: %s\n", pid_path);
-    printf("initApp: cycle_duration: %ld(sec) %ld(nsec)\n", cycle_duration.tv_sec, cycle_duration.tv_nsec);
-    printf("initApp: cope_duration: %ld(sec) %ld(nsec)\n", cope_duration.tv_sec, cope_duration.tv_nsec);
-    printf("initApp: call_interval: %ld(sec) %ld(nsec)\n", call_interval.tv_sec, call_interval.tv_nsec);
-    printf("initApp: sum_interval: %ld(sec) %ld(nsec)\n", sum_interval.tv_sec, sum_interval.tv_nsec);
-    printf("initApp: log_limit: %d\n", log_limit);
-    printf("initApp: cell_peer_id: %s\n", cell_peer_id);
-    printf("initApp: db_data_path: %s\n", db_data_path);
-    printf("initApp: db_log_path: %s\n", db_log_path);
-    printf("initApp: db_public_path: %s\n", db_public_path);
-
-#endif
     if (!initMutex(&progl_mutex)) {
         exit_nicely_e("initApp: failed to initialize mutex\n");
     }
@@ -170,9 +177,7 @@ void initApp() {
 void serverRun(int *state, int init_state) {
     char buf_in[sock_buf_size];
     char buf_out[sock_buf_size];
-    uint8_t crc;
     int i, j;
-    crc = 0;
     memset(buf_in, 0, sizeof buf_in);
     acp_initBuf(buf_out, sizeof buf_out);
     if (recvfrom(sock_fd, buf_in, sizeof buf_in, 0, (struct sockaddr*) (&(peer_client.addr)), &(peer_client.addr_size)) < 0) {
@@ -632,7 +637,7 @@ void progControl(Prog *item) {
                 char msg[LINE_SIZE];
                 snprintf(msg, sizeof msg, "kontrol parametrov: %s", item->description);
                 log_saveAlert(msg, log_limit, db_log_path);
-                //callHuman(item, msg, cell_peer, db_public_path);
+                //callHuman(item, msg, call_peer, db_public_path);
                 if (item->ring) {
                     if (lockMutex(&alert_mutex)) {
                         if (alert_state == OFF) {
@@ -713,7 +718,7 @@ void *threadFunction(void *arg) {
         }
 
         if (ton_ts(sum_interval, &tmr_sum)) {
-            sendSum(cell_peer, db_log_path, db_public_path);
+            sendSum(call_peer, db_log_path, db_public_path);
         }
 #ifdef MODE_DEBUG
         {
@@ -742,7 +747,7 @@ void *threadFunction(void *arg) {
                         }
                     }
                     if (ton_ts(call_interval, &tmr_call)) {
-                        acp_makeCall(cell_peer, &pn_list.item[LINE_SIZE * phone_ind]);
+                        acp_makeCall(call_peer, &pn_list.item[LINE_SIZE * phone_ind]);
                     }
                     break;
                 case DISABLE:

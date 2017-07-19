@@ -28,7 +28,7 @@ typedef struct {
     Ton_ts tmr;
 } RegOnfHC;
 
-extern void regonfhc_onf(RegOnfHC *item);
+extern void regonfhc_control(RegOnfHC *item);
 
 extern void regonfhc_enable(RegOnfHC *item);
 
