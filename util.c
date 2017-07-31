@@ -217,7 +217,7 @@ void printAll() {
                 peer_list.item[i].addr.sin_addr.s_addr,
                 *peer_list.item[i].fd,
                 peer_list.item[i].active,
-                &peer_list.item[i]
+                (void *)&peer_list.item[i]
                 );
         sendStr(q, &crc);
     }
@@ -235,7 +235,7 @@ void printAll() {
     snprintf(q, sizeof q, "|%11d|%16.16s|%11p|%11d|%11f|%11f|%11ld|%11ld|%11d|%3d|%3d|\n",
             curr->id,
             curr->description,
-            &curr->sensor_fts,
+            (void *)&curr->sensor_fts,
             curr->sensor_fts.remote_id,
             curr->good_value,
             curr->good_delta,

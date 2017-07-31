@@ -51,7 +51,7 @@ int readSettings() {
     FILE* stream = fopen(CONFIG_FILE, "r");
     if (stream == NULL) {
 #ifdef MODE_DEBUG
-        fputs("ERROR: readSettings: fopen", stderr);
+        fputs("ERROR: readSettings: fopen\n", stderr);
 #endif
         return 0;
     }
@@ -177,7 +177,7 @@ void initApp() {
 void serverRun(int *state, int init_state) {
     char buf_in[sock_buf_size];
     char buf_out[sock_buf_size];
-    int i, j;
+    int i;
     memset(buf_in, 0, sizeof buf_in);
     acp_initBuf(buf_out, sizeof buf_out);
     if (recvfrom(sock_fd, buf_in, sizeof buf_in, 0, (struct sockaddr*) (&(peer_client.addr)), &(peer_client.addr_size)) < 0) {
