@@ -11,6 +11,8 @@
 #include "lib/acp/main.h"
 #include "lib/acp/app.h"
 #include "lib/acp/alr.h"
+#include "lib/acp/prog.h"
+#include "lib/acp/mobile.h"
 #include "lib/configl.h"
 #include "lib/logl.h"
 

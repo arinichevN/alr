@@ -61,10 +61,11 @@ function build_lib {
 	gcc $1 $PLATFORM -c logl.c -DSQLITE_THREADSAFE=2 -DSQLITE_OMIT_LOAD_EXTENSION $DEBUG_PARAM -lsqlite3 && \
 	cd acp && \
 	gcc $1 $PLATFORM -c main.c $DEBUG_PARAM && \
+	gcc $1 $PLATFORM -c mobile.c $DEBUG_PARAM && \
 	cd ../ && \
 	echo "library: making archive..." && \
 	rm -f libpac.a
-	ar -crv libpac.a app.o crc.o timef.o udp.o util.o dbl.o configl.o logl.o acp/main.o && echo "library: done"
+	ar -crv libpac.a app.o crc.o timef.o udp.o util.o dbl.o configl.o logl.o acp/main.o acp/mobile.o && echo "library: done"
 	rm -f *.o acp/*.o
 }
 
