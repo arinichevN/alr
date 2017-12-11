@@ -161,8 +161,6 @@ void printData(ACPResponse *response) {
     SEND_STR(q)
     snprintf(q, sizeof q, "call_peer_id: %s\n", call_peer_id);
     SEND_STR(q)
-    snprintf(q, sizeof q, "phone_number_group_id: %d\n", phone_number_group_id);
-    SEND_STR(q)
     snprintf(q, sizeof q, "db_data_path: %s\n", db_data_path);
     SEND_STR(q)
     snprintf(q, sizeof q, "db_public_path: %s\n", db_public_path);
