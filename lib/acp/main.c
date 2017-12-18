@@ -1194,6 +1194,7 @@ void acp_pingPeer(Peer *item) {
             return;
         }
         if (!acp_responseCheck(&response, &request)) {
+            unlockPeer(item);
             return;
         }
         char *b = response.data;
@@ -1203,6 +1204,7 @@ void acp_pingPeer(Peer *item) {
 #ifdef MODE_DEBUG
             fputs("acp_pingPeer(): peer is not busy\n", stderr);
 #endif
+            unlockPeer(item);
             return;
         }
         item->active = 1;
