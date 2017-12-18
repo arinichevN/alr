@@ -1,9 +1,6 @@
 
 #include "main.h"
 
-/*
- * alr
- */
 
 FUN_LLIST_GET_BY_ID(Prog)
 
@@ -138,7 +135,6 @@ int bufCatProgInit(const Prog *item, ACPResponse *response) {
 
 void printData(ACPResponse *response) {
     char q[LINE_SIZE];
-    size_t i;
     snprintf(q, sizeof q, "CONFIG_FILE: %s\n", CONFIG_FILE);
     SEND_STR(q)
     snprintf(q, sizeof q, "port: %d\n", sock_port);
@@ -171,23 +167,8 @@ void printData(ACPResponse *response) {
     SEND_STR(q)
     snprintf(q, sizeof q, "PID: %d\n", proc_id);
     SEND_STR(q)
-    SEND_STR("+-------------------------------------------------------------------------------------------------+\n")
-    SEND_STR("|                                                Peer                                             |\n")
-    SEND_STR("+--------------------------------+-----------+----------------+-----------+-----------+-----------+\n")
-    SEND_STR("|               id               |  sin_port |      addr      |     fd    |  active   |   link    |\n")
-    SEND_STR("+--------------------------------+-----------+----------------+-----------+-----------+-----------+\n")
-    for (i = 0; i < peer_list.length; i++) {
-        snprintf(q, sizeof q, "|%32.32s|%11u|%16u|%11d|%11d|%11p|\n",
-                peer_list.item[i].id,
-                peer_list.item[i].addr.sin_port,
-                peer_list.item[i].addr.sin_addr.s_addr,
-                *peer_list.item[i].fd,
-                peer_list.item[i].active,
-                (void *)&peer_list.item[i]
-                );
-        SEND_STR(q)
-    }
-    SEND_STR("+--------------------------------+-----------+----------------+-----------+-----------+-----------+\n")
+            
+  acp_sendPeerListInfo(&peer_list, response, &peer_client);
 
     snprintf(q, sizeof q, "prog_list length: %d\n", prog_list.length);
     SEND_STR(q)
