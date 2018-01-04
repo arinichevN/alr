@@ -139,8 +139,6 @@ void printData(ACPResponse *response) {
     SEND_STR(q)
     snprintf(q, sizeof q, "port: %d\n", sock_port);
     SEND_STR(q)
-    snprintf(q, sizeof q, "pid_path: %s\n", pid_path);
-    SEND_STR(q)
     snprintf(q, sizeof q, "cycle_duration sec: %ld\n", cycle_duration.tv_sec);
     SEND_STR(q)
     snprintf(q, sizeof q, "cycle_duration nsec: %ld\n", cycle_duration.tv_nsec);
@@ -165,7 +163,7 @@ void printData(ACPResponse *response) {
     SEND_STR(q)
     snprintf(q, sizeof q, "app_state: %s\n", getAppState(app_state));
     SEND_STR(q)
-    snprintf(q, sizeof q, "PID: %d\n", proc_id);
+    snprintf(q, sizeof q, "PID: %d\n", getpid());
     SEND_STR(q)
             
   acp_sendPeerListInfo(&peer_list, response, &peer_client);

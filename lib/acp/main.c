@@ -136,6 +136,10 @@ static void acp_requestSetNewId(ACPRequest * item) {
     item->id = (unsigned int) rand();
 }
 
+static inline int acp_readAll(Peer *peer){
+    readAll(*(peer->fd));
+}
+
 static int acp_read(char *buf, size_t buf_size, Peer *peer) {
     ssize_t n = recvfrom(*peer->fd, buf, buf_size, 0, (struct sockaddr*) (&(peer->addr)), &(peer->addr_size));
     if (n < 0) {
@@ -144,12 +148,14 @@ static int acp_read(char *buf, size_t buf_size, Peer *peer) {
 #endif
         return 0;
     }
+    acp_readAll(peer);
 #ifdef MODE_DEBUG
     puts("acp_read() dump:");
     acp_dumpBuf(buf, buf_size);
 #endif
     return acp_crcCheck(buf, buf_size);
 }
+
 
 static int acp_responseParse(ACPResponse *item) {
     if (strlen(item->buf) < ACP_RESPONSE_BUF_SIZE_MIN) {
@@ -823,31 +829,10 @@ void acp_responseSendStr(const char *s, int is_not_last, ACPResponse *response, 
         response->last_is_ok = 0;
     }
 }
-
-int acp_responseReadFTSList(FTSList *list, size_t list_max_size, ACPRequest *request, Peer *peer) {
-    ACP_RESPONSE_CREATE
-    if (!acp_responseRead(&response, peer)) {
-        return 0;
-    }
-    if (!acp_responseCheck(&response, request)) {
-        return 0;
-    }
-    acp_dataToFTSList(response.data, list, list_max_size);
-    return 1;
-}
-
-int acp_responseReadI2List(I2List *list, size_t list_max_size, ACPRequest *request, Peer *peer) {
-    ACP_RESPONSE_CREATE
-    if (!acp_responseRead(&response, peer)) {
-        return 0;
-    }
-    if (!acp_responseCheck(&response, request)) {
-        return 0;
-    }
-    acp_dataToI2List(response.data, list, list_max_size);
-    return 1;
-}
-
+FUN_ACP_RESPONSE_READ(I1List)
+FUN_ACP_RESPONSE_READ(I2List)
+FUN_ACP_RESPONSE_READ(I1F1List)
+FUN_ACP_RESPONSE_READ(FTSList)
 int acp_setEMOutput(EM *em, int output) {
     if (lockEM(em)) {
         if (lockPeer(em->source)) {
@@ -1077,7 +1062,6 @@ int acp_readSensorFTS(SensorFTS *s) {
 #ifdef MODE_DEBUG
                 fprintf(stderr, "acp_readSensorFTS(): response: peer returned id=%d but requested one was %d\n", tl.item[0].id, s->remote_id);
 #endif
-                readAll(*(s->source->fd));
                 unlockPeer(s->source);
                 unlockSensorFTS(s);
                 return 0;
@@ -1147,7 +1131,6 @@ int acp_getFTS(FTS *output, Peer *peer, int remote_id) {
 #ifdef MODE_DEBUG
             fprintf(stderr, "acp_getFTS(): response: peer returned id=%d but requested one was %d\n", tl.item[0].id, remote_id);
 #endif
-            readAll(*(peer->fd));
             unlockPeer(peer);
             return 0;
         }
@@ -1176,7 +1159,6 @@ int acp_getFTS(FTS *output, Peer *peer, int remote_id) {
 
 void acp_pingPeer(Peer *item) {
     if (lockPeer(item)) {
-        readAll(*(item->fd));
         item->active = 0;
         item->time1 = getCurrentTime();
         ACPRequest request;
@@ -1262,11 +1244,12 @@ int acp_sendCmdGetInt(Peer *peer, char* cmd, int *output) {
             unlockPeer(peer);
             return 0;
         }
+        peer->active = 1;
         unlockPeer(peer);
         if (!acp_responseCheck(&response, &request)) {
             return 0;
         }
-        peer->active = 1;
+
         if (!acp_dataToI(response.data, output)) {
 #ifdef MODE_DEBUG
             fputs("acp_sendCmdGetInt(): acp_dataToI() failed\n", stderr);

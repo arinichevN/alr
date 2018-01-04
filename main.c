@@ -1,10 +1,5 @@
-/*
- * alr
- */
 
 #include "main.h"
-
-char pid_path[LINE_SIZE];
 
 int app_state = APP_INIT;
 
@@ -12,9 +7,6 @@ char db_data_path[LINE_SIZE];
 char db_log_path[LINE_SIZE];
 char db_public_path[LINE_SIZE];
 
-
-int pid_file = -1;
-int proc_id;
 int sock_port = -1;
 int sock_fd = -1;
 int sock_fd_tf = -1;
@@ -56,9 +48,8 @@ int readSettings() {
     char s[LINE_SIZE];
     fgets(s, LINE_SIZE, stream);
     int n;
-    n = fscanf(stream, "%d\t%255s\t%ld\t%ld\t%ld\t%ld\t%u\t%ld\t%d\t%32s\t%255s\t%255s\t%255s\n",
+    n = fscanf(stream, "%d\t%ld\t%ld\t%ld\t%ld\t%u\t%ld\t%d\t%32s\t%255s\t%255s\t%255s\n",
             &sock_port,
-            pid_path,
             &cycle_duration.tv_sec,
             &cycle_duration.tv_nsec,
             &cope_duration.tv_sec,
@@ -71,7 +62,7 @@ int readSettings() {
             db_public_path,
             db_log_path
             );
-    if (n != 13) {
+    if (n != 12) {
         fclose(stream);
 #ifdef MODE_DEBUG
         fputs("ERROR: readSettings: bad row format\n", stderr);
@@ -80,9 +71,8 @@ int readSettings() {
     }
     fclose(stream);
 #ifdef MODE_DEBUG
-    printf("readSettings: \n\tsock_port: %d, \n\tpid_path: %s,\n\tcycle_duration: %ld sec %ld nsec, \n\tcope_duration: %ld sec, \n\tcall_interval: %ld sec, \n\tlog_limit: %u, \n\tsum_interval: %ld sec, \n\tphone_number_group_id: %d, \n\tcall_peer_id: %s, \n\tdb_data_path: %s, \n\tdb_public_path: %s, \n\tdb_log_path: %s\n",
+    printf("readSettings: \n\tsock_port: %d, \n\tcycle_duration: %ld sec %ld nsec, \n\tcope_duration: %ld sec, \n\tcall_interval: %ld sec, \n\tlog_limit: %u, \n\tsum_interval: %ld sec, \n\tphone_number_group_id: %d, \n\tcall_peer_id: %s, \n\tdb_data_path: %s, \n\tdb_public_path: %s, \n\tdb_log_path: %s\n",
             sock_port,
-            pid_path,
             cycle_duration.tv_sec,
             cycle_duration.tv_nsec,
             cope_duration.tv_sec,
@@ -150,9 +140,6 @@ int initData() {
 void initApp() {
     if (!readSettings()) {
         exit_nicely_e("initApp: failed to read settings\n");
-    }
-    if (!initPid(&pid_file, &proc_id, pid_path)) {
-        exit_nicely_e("initApp: failed to initialize pid\n");
     }
     if (!initMutex(&progl_mutex)) {
         exit_nicely_e("initApp: failed to initialize mutex\n");
@@ -558,10 +545,6 @@ void freeApp() {
     freeMutex(&progl_mutex);
 #ifdef MODE_DEBUG
     puts(" free progl_mutex: done");
-#endif
-    freePid(&pid_file, &proc_id, pid_path);
-#ifdef MODE_DEBUG
-    puts(" freePid: done");
 #endif
 #ifdef MODE_DEBUG
     puts(" done");
