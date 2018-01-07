@@ -16,9 +16,11 @@ struct timespec cope_duration = {0, 0};
 struct timespec call_interval = {0, 0};
 struct timespec sum_interval = {0, 0};
 DEF_THREAD
-I1List i1l = {NULL, 0};
-I2List i2l = {NULL, 0};
-I1F1List i1f1l = {NULL, 0};
+
+I1List i1l;
+I2List i2l;
+I1F1List i1f1l;
+
 Ton_ts tmr_cope = {.ready = 0};
 Ton_ts tmr_call = {.ready = 0};
 int phone_ind = 0;
@@ -26,7 +28,7 @@ Mutex progl_mutex = {.created = 0, .attr_initialized = 0};
 Mutex alert_mutex = {.created = 0, .attr_initialized = 0};
 char alert_state = OFF;
 unsigned int log_limit = 0;
-PeerList peer_list = {NULL, 0};
+PeerList peer_list;
 ProgList prog_list = {NULL, NULL, 0};
 Peer *call_peer = NULL;
 char call_peer_id[NAME_SIZE];
@@ -104,21 +106,18 @@ int initData() {
         FREE_LIST(&peer_list);
         return 0;
     }
-    i1l.item = (int *) malloc(ACP_BUFFER_MAX_SIZE * sizeof *(i1l.item));
-    if (i1l.item == NULL) {
+    if(!initI1List(&i1l, ACP_BUFFER_MAX_SIZE)){
         freeProg(&prog_list);
         FREE_LIST(&peer_list);
         return 0;
     }
-    i2l.item = (I2 *) malloc(ACP_BUFFER_MAX_SIZE * sizeof *(i2l.item));
-    if (i2l.item == NULL) {
+    if(!initI2List(&i2l, ACP_BUFFER_MAX_SIZE)){
         FREE_LIST(&i1l);
         freeProg(&prog_list);
         FREE_LIST(&peer_list);
         return 0;
     }
-    i1f1l.item = (I1F1 *) malloc(ACP_BUFFER_MAX_SIZE * sizeof *(i1f1l.item));
-    if (i1f1l.item == NULL) {
+    if(!initI1F1List(&i1f1l, ACP_BUFFER_MAX_SIZE)){
         FREE_LIST(&i2l);
         FREE_LIST(&i1l);
         freeProg(&prog_list);
@@ -183,7 +182,7 @@ void serverRun(int *state, int init_state) {
             ACP_CMD_IS(ACP_CMD_PROG_GET_DATA_RUNTIME) ||
             ACP_CMD_IS(ACP_CMD_PROG_GET_DATA_INIT)
             ) {
-        acp_requestDataToI1List(&request, &i1l, prog_list.length);
+        acp_requestDataToI1List(&request, &i1l);
         if (i1l.length <= 0) {
             return;
         }
@@ -191,7 +190,7 @@ void serverRun(int *state, int init_state) {
             ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_GOAL) ||
             ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_DELTA)
             ) {
-        acp_requestDataToI1F1List(&request, &i1f1l, prog_list.length);
+        acp_requestDataToI1F1List(&request, &i1f1l);
         if (i1f1l.length <= 0) {
             return;
         }
@@ -199,7 +198,7 @@ void serverRun(int *state, int init_state) {
             ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_SMS) ||
             ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_RING)
             ) {
-        acp_requestDataToI2List(&request, &i2l, prog_list.length);
+        acp_requestDataToI2List(&request, &i2l);
         if (i2l.length <= 0) {
             return;
         }
