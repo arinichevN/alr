@@ -7,6 +7,7 @@ CREATE TABLE "prog" (
   "id" INTEGER PRIMARY KEY,
   "description" TEXT NOT NULL,
   "sensor_fts_id" INTEGER NOT NULL,
+  "call_peer_id" TEXT NOT NULL,
   "good_value" REAL NOT NULL,
   "good_delta" REAL NOT NULL,
   "check_interval" INTEGER NOT NULL,

@@ -30,9 +30,8 @@
 
 #define WAIT_RESP_TIMEOUT 1
 
-#define PROG_LIST_LOOP_DF Prog *curr = prog_list.top;
-#define PROG_LIST_LOOP_ST while (curr != NULL) {
-#define PROG_LIST_LOOP_SP curr = curr->next; } curr = prog_list.top;
+#define PROG_LIST_LOOP_ST {Prog *item = prog_list.top; while (item != NULL) {
+#define PROG_LIST_LOOP_SP item = item->next; } item = prog_list.top;}
 
 #define SNR_VALUE item->sensor_fts.value.value
 #define SNR_STATE item->sensor_fts.value.state
@@ -43,7 +42,7 @@
 #define STATUS_SUCCESS "success"
 #define STATUS_FAILURE "failure"
 
-#define PROG_FIELDS "id,description,sensor_fts_id,good_value,good_delta,check_interval,cope_duration,phone_number_group_id,sms,ring,enable,load"
+#define PROG_FIELDS "id,description,sensor_fts_id,call_peer_id,good_value,good_delta,check_interval,cope_duration,phone_number_group_id,sms,ring,enable,load"
 
 enum {
     INIT,
@@ -60,6 +59,7 @@ struct prog_st {
     int id;
     char description[NAME_SIZE];
     SensorFTS sensor_fts;
+    Peer call_peer;
     int phone_number_group_id;
     double good_value;
     double good_delta;
@@ -72,6 +72,11 @@ struct prog_st {
     Ton_ts tmr_check;
     Ton_ts tmr_cope;
 
+    struct timespec cycle_duration;
+    int log_limit;
+    int sock_fd;
+
+    pthread_t thread;
     Mutex mutex;
     struct prog_st *next;
 };
@@ -81,9 +86,10 @@ typedef struct prog_st Prog;
 DEC_LLIST(Prog)
 
 typedef struct {
-    sqlite3 *db;
-    PeerList *peer_list;
     ProgList *prog_list;
+    PeerList *peer_list;
+    Prog * prog;
+    sqlite3 *db_data;
 } ProgData;
 
 extern int readSettings();
@@ -94,15 +100,9 @@ extern void initApp();
 
 extern void serverRun(int *state, int init_state);
 
-extern int readFTS(SensorFTS *s);
-
 extern void progControl(Prog *item);
 
 extern void *threadFunction(void *arg);
-
-extern int createThread_ctl();
-
-extern void freeProg(ProgList *list);
 
 extern void freeData();
 
