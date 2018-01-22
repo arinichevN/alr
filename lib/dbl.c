@@ -24,6 +24,7 @@ int db_openR(const char *path, sqlite3 **db) {
         sqlite3_close(*db);
         return 0;
     }
+    //int rs= sqlite3_busy_timeout(*db, 2000);
     return 1;
 }
 

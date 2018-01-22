@@ -9,7 +9,6 @@
 #include "main.h"
 
 #define DB_COLUMN_IS(V) strcmp(V, azColName[i]) == 0
-
 extern int db_open(const char *path, sqlite3 **db);
 
 extern int db_openR(const char *path, sqlite3 **db);

@@ -234,47 +234,66 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
     ProgData * data = d;
     Prog *item = data->prog;
     int load = 0, enable = 0;
+    int c=0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("id")) {
             item->id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("sensor_fts_id")) {
             if (!config_getSensorFTS(&item->sensor_fts, atoi(argv[i]), data->peer_list, data->db_data)) {
                 free(item);
                 return 1;
             }
+            c++;
         } else if (DB_COLUMN_IS("call_peer_id")) {
             Peer *peer = getPeerById(argv[i], data->peer_list);
             if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             item->call_peer = *peer;
+            c++;
         } else if (DB_COLUMN_IS("description")) {
             memcpy(item->description, argv[i], sizeof item->description);
+            c++;
         } else if (DB_COLUMN_IS("good_value")) {
             item->good_value = atof(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("good_delta")) {
             item->good_delta = atof(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("check_interval")) {
             item->check_interval.tv_nsec = 0;
             item->check_interval.tv_sec = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("cope_duration")) {
             item->cope_duration.tv_nsec = 0;
             item->cope_duration.tv_sec = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("phone_number_group_id")) {
             item->phone_number_group_id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("sms")) {
             item->sms = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("ring")) {
             item->ring = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("enable")) {
             enable = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("load")) {
             load = atoi(argv[i]);
+            c++;
         } else {
             fputs("getProg_callback: unknown column\n", stderr);
         }
     }
-
+#define N 13
+    if (c != N) {
+        fprintf(stderr, "getProg_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     if (enable) {
         item->state = INIT;
     } else {

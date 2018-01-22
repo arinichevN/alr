@@ -27,6 +27,7 @@ int config_checkSensorFTSList(const SensorFTSList *list) {
     }
     return 1;
 }
+
 int config_checkEMList(const EMList *list) {
     //unique id
     for (int i = 0; i < list->length; i++) {
@@ -44,17 +45,28 @@ int config_checkEMList(const EMList *list) {
 
 static int getPeerList_callback(void *data, int argc, char **argv, char **azColName) {
     PeerData *peer_data = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("id")) {
             memcpy(PDLi.id, argv[i], NAME_SIZE);
+            c++;
         } else if (DB_COLUMN_IS("port")) {
             PDLi.port = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("ip_addr")) {
             memcpy(PDLi.addr_str, argv[i], LINE_SIZE);
+            c++;
         } else {
             fputs("getPeerList_callback(): unknown column\n", stderr);
         }
     }
+#define N 3
+    if (c != N) {
+        peer_data->list->length++;
+        fprintf(stderr, "getPeerList_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     if (!makeClientAddr(&PDLi.addr, PDLi.addr_str, PDLi.port)) {
         fprintf(stderr, "getPeerList_callback(): bad ip address for peer with id=%s\n", PDLi.id);
         peer_data->list->length++;
@@ -72,99 +84,148 @@ static int getPeerList_callback(void *data, int argc, char **argv, char **azColN
 
 static int getPhoneNumber_callback(void *data, int argc, char **argv, char **azColName) {
     S1List *item = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("value")) {
             memcpy(&item->item[item->length * LINE_SIZE], argv[i], LINE_SIZE);
+            c++;
         } else {
             fputs("getPhoneNumber_callback(): unknown column\n", stderr);
         }
     }
     item->length++;
+#define N 1
+    if (c != N) {
+        fprintf(stderr, "getPhoneNumber_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     return EXIT_SUCCESS;
 }
 
 static int getSensorFTS_callback(void *data, int argc, char **argv, char **azColName) {
     SensorFTSData *item = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("peer_id")) {
             Peer *peer = getPeerById(argv[i], item->peer_list);
-            if(peer==NULL){
+            if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             item->sensor->peer = *peer;
+            c++;
         } else if (DB_COLUMN_IS("remote_id")) {
             item->sensor->remote_id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("sensor_id")) {
             item->sensor->id = atoi(argv[i]);
+            c++;
         } else {
             fputs("getSensorFTS_callback(): unknown column\n", stderr);
         }
     }
+#define N 3
+    if (c != N) {
+        fprintf(stderr, "getPeerList_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     return EXIT_SUCCESS;
 }
 
 static int getSensorFTSList_callback(void *data, int argc, char **argv, char **azColName) {
     SensorFTSListData *d = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("peer_id")) {
             Peer *peer = getPeerById(argv[i], d->peer_list);
-            if(peer==NULL){
+            if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             d->list->item[d->list->length].peer = *peer;
+            c++;
         } else if (DB_COLUMN_IS("remote_id")) {
             d->list->item[d->list->length].remote_id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("sensor_id")) {
             d->list->item[d->list->length].id = atoi(argv[i]);
+            c++;
         } else {
             fputs("getSensorFTSList_callback(): unknown column\n", stderr);
         }
     }
     d->list->length++;
+#define N 3
+    if (c != N) {
+        fprintf(stderr, "getSensorFTSList_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     return EXIT_SUCCESS;
 }
 
 static int getEM_callback(void *data, int argc, char **argv, char **azColName) {
     EMData *item = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("peer_id")) {
             Peer *peer = getPeerById(argv[i], item->peer_list);
-            if(peer==NULL){
+            if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             item->em->peer = *peer;
+            c++;
         } else if (DB_COLUMN_IS("remote_id")) {
             item->em->remote_id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("pwm_rsl")) {
             item->em->pwm_rsl = atof(argv[i]);
+            c++;
         } else {
             fputs("getEM_callback(): unknown column\n", stderr);
         }
     }
     item->em->last_output = 0.0f;
+#define N 3
+    if (c != N) {
+        fprintf(stderr, "getEM_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     return 0;
 }
 
 static int getEMList_callback(void *data, int argc, char **argv, char **azColName) {
     EMListData *d = data;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("peer_id")) {
             Peer *peer = getPeerById(argv[i], d->peer_list);
-            if(peer==NULL){
+            if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             d->list->item[d->list->length].peer = *peer;
+            c++;
         } else if (DB_COLUMN_IS("remote_id")) {
             d->list->item[d->list->length].remote_id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("em_id")) {
             d->list->item[d->list->length].id = atoi(argv[i]);
+            c++;
         } else if (DB_COLUMN_IS("pwm_rsl")) {
             d->list->item[d->list->length].pwm_rsl = atof(argv[i]);
+            c++;
         } else {
             fputs("getEMList_callback(): unknown column\n", stderr);
         }
     }
     d->list->length++;
+#define N 4
+    if (c != N) {
+        fprintf(stderr, "getEMList_callback(): required %d columns but %d found\n", N, c);
+        return EXIT_FAILURE;
+    }
+#undef N
     return 0;
 }
 
