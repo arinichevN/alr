@@ -17,7 +17,7 @@ I1List i1l;
 I2List i2l;
 I1F1List i1f1l;
 
-Mutex progl_mutex = {.created = 0, .attr_initialized = 0};
+Mutex progl_mutex = MUTEX_INITIALIZER;
 Mutex db_data_mutex = MUTEX_INITIALIZER;
 Mutex db_public_mutex = MUTEX_INITIALIZER;
 
@@ -192,7 +192,7 @@ void serverRun(int *state, int init_state) {
                         item->state = INIT;
 
                         if (lockMutex(&db_data_mutex)) {
-                            config_saveProgEnable(item->id, 1, NULL, db_data_path);
+                            db_saveTableFieldInt("prog","enable",item->id, 1, NULL, db_data_path);
                             unlockMutex(&db_data_mutex);
                         }
                     }
@@ -210,7 +210,7 @@ void serverRun(int *state, int init_state) {
                         item->state = DISABLE;
 
                         if (lockMutex(&db_data_mutex)) {
-                            config_saveProgEnable(item->id, 0, NULL, db_data_path);
+                            db_saveTableFieldInt("prog","enable",item->id, 0, NULL, db_data_path);
                             unlockMutex(&db_data_mutex);
                         }
                     }
@@ -247,7 +247,7 @@ void serverRun(int *state, int init_state) {
                 }
             }
             if (lockMutex(&db_data_mutex)) {
-                saveProgGoodValue(i1f1l.item[i].p0, i1f1l.item[i].p1, db_data_path);
+                db_saveTableFieldFloat("prog","good_value",i1f1l.item[i].p0, i1f1l.item[i].p1, NULL,db_data_path);
                 unlockMutex(&db_data_mutex);
             }
         }
@@ -262,7 +262,7 @@ void serverRun(int *state, int init_state) {
                 }
             }
             if (lockMutex(&db_data_mutex)) {
-                saveProgGoodDelta(i1f1l.item[i].p0, i1f1l.item[i].p1, db_data_path);
+                db_saveTableFieldFloat("prog","good_delta",i1f1l.item[i].p0, i1f1l.item[i].p1, NULL,db_data_path);
                 unlockMutex(&db_data_mutex);
             }
         }
@@ -277,7 +277,7 @@ void serverRun(int *state, int init_state) {
                 }
             }
             if (lockMutex(&db_data_mutex)) {
-                saveProgSMS(i2l.item[i].p0, i2l.item[i].p1, db_data_path);
+                db_saveTableFieldInt("prog","sms",i2l.item[i].p0, i2l.item[i].p1,NULL, db_data_path);
                 unlockMutex(&db_data_mutex);
             }
         }
@@ -292,7 +292,7 @@ void serverRun(int *state, int init_state) {
                 }
             }
             if (lockMutex(&db_data_mutex)) {
-                saveProgRing(i2l.item[i].p0, i2l.item[i].p1, db_data_path);
+                db_saveTableFieldInt("prog","ring",i2l.item[i].p0, i2l.item[i].p1, NULL,db_data_path);
                 unlockMutex(&db_data_mutex);
             }
         }

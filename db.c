@@ -24,62 +24,6 @@ int addProg(Prog *item, ProgList *list) {
     return 1;
 }
 
-void saveProgGoodDelta(int id, float value, const char* db_path) {
-    sqlite3 *db;
-    if (!db_open(db_path, &db)) {
-        printfe("saveProgGoodDelta: failed to open db where id=%d\n", id);
-        return;
-    }
-    char q[LINE_SIZE];
-    snprintf(q, sizeof q, "update prog set good_delta=%f where id=%d", value, id);
-    if (!db_exec(db, q, 0, 0)) {
-        printfe("saveProgGoodDelta: query failed: %s\n", q);
-    }
-    sqlite3_close(db);
-}
-
-void saveProgGoodValue(int id, float value, const char* db_path) {
-    sqlite3 *db;
-    if (!db_open(db_path, &db)) {
-        printfe("saveProgGoodValue: failed to open db where id=%d\n", id);
-        return;
-    }
-    char q[LINE_SIZE];
-    snprintf(q, sizeof q, "update prog set good_value=%f where id=%d", value, id);
-    if (!db_exec(db, q, 0, 0)) {
-        printfe("saveProgGoodValue: query failed: %s\n", q);
-    }
-    sqlite3_close(db);
-}
-
-void saveProgSMS(int id, int value, const char* db_path) {
-    sqlite3 *db;
-    if (!db_open(db_path, &db)) {
-        printfe("saveProgSMS: failed to open db where id=%d\n", id);
-        return;
-    }
-    char q[LINE_SIZE];
-    snprintf(q, sizeof q, "update prog set sms=%d where id=%d", value, id);
-    if (!db_exec(db, q, 0, 0)) {
-        printfe("saveProgSMS: query failed: %s\n", q);
-    }
-    sqlite3_close(db);
-}
-
-void saveProgRing(int id, int value, const char* db_path) {
-    sqlite3 *db;
-    if (!db_open(db_path, &db)) {
-        printfe("saveProgRing: failed to open db where id=%d\n", id);
-        return;
-    }
-    char q[LINE_SIZE];
-    snprintf(q, sizeof q, "update prog set ring=%d where id=%d", value, id);
-    if (!db_exec(db, q, 0, 0)) {
-        printfe("saveProgRing: query failed: %s\n", q);
-    }
-    sqlite3_close(db);
-}
-
 int addProgById(int prog_id, ProgList *list, PeerList *peer_list, sqlite3 *db_data, const char *db_data_path) {
     Prog *rprog = getProgById(prog_id, list);
     if (rprog != NULL) {//program is already running
@@ -162,7 +106,7 @@ int deleteProgById(int id, ProgList *list, char* db_data_path) {
             }
             list->length--;
             stopProgThread(curr);
-            config_saveProgLoad(curr->id, 0, NULL, db_data_path);
+            db_saveTableFieldInt("prog","load",curr->id, 0, NULL, db_data_path);
             freeProg(curr);
 #ifdef MODE_DEBUG
             printf("prog with id: %d deleted from prog_list\n", id);
@@ -300,7 +244,7 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
         item->state = DISABLE;
     }
     if (!load) {
-        config_saveProgLoad(item->id, 1, data->db_data, NULL);
+        db_saveTableFieldInt("prog","load",item->id, 1, data->db_data, NULL);
     }
     return EXIT_SUCCESS;
 }
@@ -312,11 +256,12 @@ int getProgByIdFDB(int prog_id, Prog *item, PeerList *peer_list, sqlite3 *dbl, c
 #endif
         return 0;
     }
-    sqlite3 *db;
+    sqlite3 *db;int close=0;
     if (db_path != NULL) {
         if (!db_open(db_path, &db)) {
             return 0;
         }
+        close=1;
     } else {
         db = dbl;
     }
@@ -327,10 +272,10 @@ int getProgByIdFDB(int prog_id, Prog *item, PeerList *peer_list, sqlite3 *dbl, c
 #ifdef MODE_DEBUG
         fprintf(stderr, "getProgByIdFDB(): query failed: %s\n", q);
 #endif
-        sqlite3_close(db);
+        if(close)sqlite3_close(db);
         return 0;
     }
-    sqlite3_close(db);
+    if(close)sqlite3_close(db);
     return 1;
 }
 
