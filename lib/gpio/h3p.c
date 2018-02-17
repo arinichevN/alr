@@ -1,5 +1,4 @@
 //Allwinner H3 CPU
-
 #include "pinout.h"
 
 #define PIO_BASE (0x01C20800)

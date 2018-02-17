@@ -62,6 +62,7 @@ void stopAllProgThreads(ProgList * list) {
 void freeProg(Prog * item) {
     freeSocketFd(&item->sock_fd);
     freeMutex(&item->mutex);
+    free(item->description);
     free(item);
 }
 

@@ -1,4 +1,3 @@
-
 #include "pinout.h"
 
 #define BLOCK_SIZE              (4*1024)

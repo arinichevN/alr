@@ -65,18 +65,21 @@ int addProgById(int prog_id, ProgList *list, PeerList *peer_list, sqlite3 *db_da
     if (!checkProg(item)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
+        free(item->description);
         free(item);
         return 0;
     }
     if (!addProg(item, list)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
+        free(item->description);
         free(item);
         return 0;
     }
     if (!createMThread(&item->thread, &threadFunction, item)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
+        free(item->description);
         free(item);
         return 0;
     }
@@ -125,7 +128,7 @@ int loadActiveProg_callback(void *d, int argc, char **argv, char **azColName) {
     ProgData *data = d;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("id")) {
-            int id = atoi(argv[i]);
+            int id = atoi(DB_COLUMN_VALUE);
             addProgById(id, data->prog_list, data->peer_list, data->db_data, NULL);
         } else {
             fputs("loadActiveProg_callback(): unknown column\n", stderr);
@@ -181,60 +184,65 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
     int c=0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("id")) {
-            item->id = atoi(argv[i]);
+            item->id = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("sensor_fts_id")) {
-            if (!config_getSensorFTS(&item->sensor_fts, atoi(argv[i]), data->peer_list, data->db_data)) {
+            if (!config_getSensorFTS(&item->sensor_fts, atoi(DB_COLUMN_VALUE), data->peer_list, data->db_data)) {
                 free(item);
                 return 1;
             }
             c++;
         } else if (DB_COLUMN_IS("call_peer_id")) {
-            Peer *peer = getPeerById(argv[i], data->peer_list);
+            Peer *peer = getPeerById(DB_COLUMN_VALUE, data->peer_list);
             if (peer == NULL) {
                 return EXIT_FAILURE;
             }
             item->call_peer = *peer;
             c++;
         } else if (DB_COLUMN_IS("description")) {
-            memcpy(item->description, argv[i], sizeof item->description);
+            strcpyma(&item->description,DB_COLUMN_VALUE);
+            if (item->description == NULL) {
+                fprintf(stderr, "%s(): failed to allocate memory for description\n", F);
+                return EXIT_FAILURE;
+            }
             c++;
         } else if (DB_COLUMN_IS("good_value")) {
-            item->good_value = atof(argv[i]);
+            item->good_value = atof(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("good_delta")) {
-            item->good_delta = atof(argv[i]);
+            item->good_delta = atof(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("check_interval")) {
             item->check_interval.tv_nsec = 0;
-            item->check_interval.tv_sec = atoi(argv[i]);
+            item->check_interval.tv_sec = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("cope_duration")) {
             item->cope_duration.tv_nsec = 0;
-            item->cope_duration.tv_sec = atoi(argv[i]);
+            item->cope_duration.tv_sec = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("phone_number_group_id")) {
-            item->phone_number_group_id = atoi(argv[i]);
+            item->phone_number_group_id = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("sms")) {
-            item->sms = atoi(argv[i]);
+            item->sms = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("ring")) {
-            item->ring = atoi(argv[i]);
+            item->ring = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("enable")) {
-            enable = atoi(argv[i]);
+            enable = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("load")) {
-            load = atoi(argv[i]);
+            load = atoi(DB_COLUMN_VALUE);
             c++;
         } else {
-            fputs("getProg_callback: unknown column\n", stderr);
+            fprintf(stderr,"%s(): unknown column: %s\n", F,DB_COLUMN_NAME);
+            c++;
         }
     }
 #define N 13
     if (c != N) {
-        fprintf(stderr, "getProg_callback(): required %d columns but %d found\n", N, c);
+        fprintf(stderr, "%s(): required %d columns but %d found\n", F,N, c);
         return EXIT_FAILURE;
     }
 #undef N

@@ -57,7 +57,7 @@ enum {
 
 struct prog_st {
     int id;
-    char description[NAME_SIZE];
+    char * description;
     SensorFTS sensor_fts;
     Peer call_peer;
     int phone_number_group_id;

@@ -1,5 +1,7 @@
 
 #include "app.h"
+#include "acp/main.h"
+
 
 void putse(const char *str) {
 #ifdef MODE_DEBUG
@@ -229,3 +231,18 @@ int threadSetCancelState(int state){
     }
     return 1;
 }
+
+char * strcpyma(char **dest, char *src){
+    size_t n=strlen(src)+1;
+    char * p=calloc(n, sizeof (*dest));
+    if(p==NULL){
+        *dest=NULL;
+        fprintf(stderr, "%s(): ", __FUNCTION__);
+        perror("calloc()");
+        return NULL;
+    }
+    strncpy(p, src,n);
+    *dest=p;
+    return *dest;
+}
+

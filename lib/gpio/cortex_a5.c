@@ -1,5 +1,4 @@
 //Cortex A5 32 bit
-
 #include "pinout.h"
 #define GPIOA_BASE                         0x20930000
 #define GPIOB_BASE                         0x20931000
