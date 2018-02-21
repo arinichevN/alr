@@ -302,13 +302,13 @@ void printHelp(ACPResponse *response) {
     SEND_STR(q)
     snprintf(q, sizeof q, "%s\tdisable running program; program id expected\n", ACP_CMD_PROG_DISABLE);
     SEND_STR(q)
-    snprintf(q, sizeof q, "%s\tset sms option (0 or 1) for program; program id expected\n", ACP_CMD_ALR_PROG_SET_SMS);
+    snprintf(q, sizeof q, "%s\tset sms option (0 or 1) for program; program id expected\n", ACP_CMD_CHV_PROG_SET_SMS);
     SEND_STR(q)
-    snprintf(q, sizeof q, "%s\tset ring option (0 or 1) for program; program id expected\n", ACP_CMD_ALR_PROG_SET_RING);
+    snprintf(q, sizeof q, "%s\tset ring option (0 or 1) for program; program id expected\n", ACP_CMD_CHV_PROG_SET_RING);
     SEND_STR(q)
-    snprintf(q, sizeof q, "%s\tset goal (float) for program; program id expected\n", ACP_CMD_ALR_PROG_SET_GOAL);
+    snprintf(q, sizeof q, "%s\tset goal (float) for program; program id expected\n", ACP_CMD_CHV_PROG_SET_GOAL);
     SEND_STR(q)
-    snprintf(q, sizeof q, "%s\tset delta (float) for program; program id expected\n", ACP_CMD_ALR_PROG_SET_DELTA);
+    snprintf(q, sizeof q, "%s\tset delta (float) for program; program id expected\n", ACP_CMD_CHV_PROG_SET_DELTA);
     SEND_STR(q)
     snprintf(q, sizeof q, "%s\tget prog runtime data in format:  progId_state_stateEM_output_timeRestSecToEMSwap; program id expected\n", ACP_CMD_PROG_GET_DATA_RUNTIME);
     SEND_STR(q)

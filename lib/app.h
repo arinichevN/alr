@@ -72,7 +72,9 @@
 #define DEF_SERVER_I1LIST I1 i1_arr[request.data_rows_count];I1List i1l;i1l.item=i1_arr;i1l.max_length=request.data_rows_count;i1l.length=0;
 #define DEF_SERVER_I2LIST I2 i2_arr[request.data_rows_count];I2List i2l;i2l.item=i2_arr;i2l.max_length=request.data_rows_count;i2l.length=0;
 #define DEF_SERVER_I1F1LIST I1F1 i1f1_arr[request.data_rows_count];I1F1List i1f1l;i1f1l.item=i1f1_arr;i1f1l.max_length=request.data_rows_count;i1f1l.length=0;
-
+#define DEF_SERVER_S1LIST(str_sz) S1 s1_arr[request.data_rows_count * str_sz];S1List s1l;s1l.item=s1_arr;s1l.max_length=request.data_rows_count * str_sz;s1l.length=0;
+#define DEF_SERVER_S2LIST S2 s2_arr[request.data_rows_count];S2List s2l;s2l.item=s2_arr;s2l.max_length=request.data_rows_count;s2l.length=0;
+#define DEF_SERVER_I1S1LIST I1S1 i1s1_arr[request.data_rows_count];I1S1List i1s1l;i1s1l.item=i1s1_arr;i1s1l.max_length=request.data_rows_count;i1s1l.length=0;
 
 #define SEND_STR(V) acp_responseSendStr(V, ACP_MIDDLE_PACK, response, &peer_client);
 #define SEND_STR_L(V) acp_responseSendStr(V, ACP_LAST_PACK, response, &peer_client);
@@ -117,8 +119,10 @@
     return NULL;
 
 #define FORL for (i = 0; i < list->length; i++) 
-#define FORLISTP(V, I) for (size_t I = 0; I < V->length; I++) 
+#define FORLISTP(V, I) for (size_t I = 0; I < (V)->length; I++) 
+#define FORLIST(I) for (size_t I = 0; I < list->length; I++) 
 #define LIi list->item[i]
+#define LIj list->item[j]
 #define Lil list->length-1
 
 #define FUN_LOCK(T) int lock ## T (T *item) {if (item == NULL) {return 0;} if (pthread_mutex_lock(&(item->mutex.self)) != 0) {return 0;}return 1;}

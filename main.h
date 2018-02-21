@@ -1,6 +1,6 @@
 
-#ifndef ALR_H
-#define ALR_H
+#ifndef CHV_H
+#define CHV_H
 
 #include "lib/dbl.h"
 #include "lib/util.h"
@@ -10,14 +10,14 @@
 #include "lib/udp.h"
 #include "lib/acp/main.h"
 #include "lib/acp/app.h"
-#include "lib/acp/alr.h"
+#include "lib/acp/chv.h"
 #include "lib/acp/prog.h"
 #include "lib/acp/mobile.h"
 #include "lib/configl.h"
 #include "lib/logl.h"
 
 
-#define APP_NAME alr
+#define APP_NAME chv
 #define APP_NAME_STR TOSTRING(APP_NAME)
 
 #ifdef MODE_FULL

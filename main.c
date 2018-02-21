@@ -13,11 +13,6 @@ int log_limit = 0;
 
 Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 struct timespec cycle_duration = {0, 0};
-/*
-I1List i1l;
-I2List i2l;
-I1F1List i1f1l;
-*/
 
 Mutex progl_mutex = MUTEX_INITIALIZER;
 Mutex db_data_mutex = MUTEX_INITIALIZER;
@@ -89,37 +84,12 @@ int readSettings() {
 }
 
 int initData() {
-    /*
-        if (!initI1List(&i1l, ACP_BUFFER_MAX_SIZE)) {
-            return 0;
-        }
-        if (!initI2List(&i2l, ACP_BUFFER_MAX_SIZE)) {
-            FREE_LIST(&i1l);
-            return 0;
-        }
-        if (!initI1F1List(&i1f1l, ACP_BUFFER_MAX_SIZE)) {
-            FREE_LIST(&i2l);
-            FREE_LIST(&i1l);
-            return 0;
-        }
-     */
     if (!config_getPeerList(&peer_list, NULL, db_public_path)) {
-        /*
-                FREE_LIST(&i1f1l);
-                FREE_LIST(&i2l);
-                FREE_LIST(&i1l);
-         */
         return 0;
     }
     if (!loadActiveProg(&prog_list, &peer_list, db_data_path)) {
         freeProgList(&prog_list);
         freePeerList(&peer_list);
-        /*
-                FREE_LIST(&peer_list);
-                FREE_LIST(&i1f1l);
-                FREE_LIST(&i2l);
-                FREE_LIST(&i1l);
-         */
         return 0;
     }
     return 1;
@@ -165,16 +135,16 @@ void serverRun(int *state, int init_state) {
             return;
         }
     } else if (
-            ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_GOAL) ||
-            ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_DELTA)
+            ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_GOAL) ||
+            ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_DELTA)
             ) {
         acp_requestDataToI1F1List(&request, &i1f1l);
         if (i1f1l.length <= 0) {
             return;
         }
     } else if (
-            ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_SMS) ||
-            ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_RING)
+            ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_SMS) ||
+            ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_RING)
             ) {
         acp_requestDataToI2List(&request, &i2l);
         if (i2l.length <= 0) {
@@ -275,7 +245,7 @@ void serverRun(int *state, int init_state) {
                 }
             }
         }
-    } else if (ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_GOAL)) {
+    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_GOAL)) {
         for (int i = 0; i < i1f1l.length; i++) {
             Prog *item = getProgById(i1f1l.item[i].p0, &prog_list);
             if (item != NULL) {
@@ -290,7 +260,7 @@ void serverRun(int *state, int init_state) {
             }
         }
         return;
-    } else if (ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_DELTA)) {
+    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_DELTA)) {
         for (int i = 0; i < i1f1l.length; i++) {
             Prog *item = getProgById(i1f1l.item[i].p0, &prog_list);
             if (item != NULL) {
@@ -305,7 +275,7 @@ void serverRun(int *state, int init_state) {
             }
         }
         return;
-    } else if (ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_SMS)) {
+    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_SMS)) {
         for (int i = 0; i < i2l.length; i++) {
             Prog *item = getProgById(i2l.item[i].p0, &prog_list);
             if (item != NULL) {
@@ -320,7 +290,7 @@ void serverRun(int *state, int init_state) {
             }
         }
         return;
-    } else if (ACP_CMD_IS(ACP_CMD_ALR_PROG_SET_RING)) {
+    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_RING)) {
         for (int i = 0; i < i2l.length; i++) {
             Prog *item = getProgById(i2l.item[i].p0, &prog_list);
             if (item != NULL) {
@@ -442,12 +412,6 @@ void freeData() {
     stopAllProgThreads(&prog_list);
     freeProgList(&prog_list);
     freePeerList(&peer_list);
-    /*
-        FREE_LIST(&peer_list);
-        FREE_LIST(&i1f1l);
-        FREE_LIST(&i2l);
-        FREE_LIST(&i1l);
-     */
 }
 
 void freeApp() {

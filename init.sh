@@ -4,7 +4,7 @@ if [ true != "$INIT_D_SCRIPT_SOURCED" ] ; then
     set "$0" "$@"; INIT_D_SCRIPT_SOURCED=true . /lib/init/init-d-script
 fi
 ### BEGIN INIT INFO
-# Provides:          alr
+# Provides:          chv
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -15,4 +15,4 @@ fi
 # Author: Arinichev Nikolay <arinichev_n@mail.ru>
 
 DESC="sensor readings checking"
-DAEMON=/usr/sbin/alr
+DAEMON=/usr/sbin/chv
