@@ -116,11 +116,11 @@ void initApp() {
 void serverRun(int *state, int init_state) {
     SERVER_HEADER
     SERVER_APP_ACTIONS
-            
+
     DEF_SERVER_I1LIST
     DEF_SERVER_I2LIST
     DEF_SERVER_I1F1LIST
-            
+
     if (
             ACP_CMD_IS(ACP_CMD_PROG_STOP) ||
             ACP_CMD_IS(ACP_CMD_PROG_START) ||
@@ -367,7 +367,10 @@ void progControl(Prog *item) {
         case OFF:
             break;
         default:
-            item->state = INIT;
+#ifdef MODE_DEBUG
+            fprintf(stderr, "%s(): unknown state, switched to OFF where prog_id=%d\n", F, item->id);
+#endif
+            item->state = OFF;
             break;
     }
 #ifdef MODE_DEBUG
