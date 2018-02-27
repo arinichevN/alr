@@ -120,20 +120,12 @@ int checkProg(const Prog *item) {
     return 1;
 }
 
-struct timespec getTimeRestL(struct timespec interval, Ton_ts tmr) {
-    struct timespec out = {-1, -1};
-    if (tmr.ready) {
-        out = getTimeRest_ts(interval, tmr.start);
-    }
-    return out;
-}
-
 struct timespec getTimeRestCope(const Prog *item) {
-    return getTimeRestL(item->cope_duration, item->tmr_cope);
+    return getTimeRestTmr(item->cope_duration, item->tmr_cope);
 }
 
 struct timespec getTimeRestCheck(const Prog *item) {
-    return getTimeRestL(item->check_interval, item->tmr_check);
+    return getTimeRestTmr(item->check_interval, item->tmr_check);
 }
 
 char * getStateStr(char state) {
