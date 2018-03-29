@@ -56,6 +56,7 @@ function build_lib {
 	gcc $1 $PLATFORM -c timef.c -D_REENTRANT  $DEBUG_PARAM -lpthread && \
 	gcc $1 $PLATFORM -c udp.c -D_REENTRANT $DEBUG_PARAM -lpthread && \
 	gcc $1 $PLATFORM -c util.c -D_REENTRANT $DEBUG_PARAM -lpthread && \
+	gcc $1 $PLATFORM -c tsv.c -D_REENTRANT $DEBUG_PARAM -lpthread && \
 	gcc $1 $PLATFORM -c dbl.c -D_REENTRANT -DSQLITE_THREADSAFE=2 -DSQLITE_OMIT_LOAD_EXTENSION $DEBUG_PARAM -lpthread -lsqlite3 && \
 	gcc $1 $PLATFORM -c configl.c -D_REENTRANT -DSQLITE_THREADSAFE=2 -DSQLITE_OMIT_LOAD_EXTENSION  $DEBUG_PARAM -lpthread -lsqlite3 && \
 	gcc $1 $PLATFORM -c logl.c -D_REENTRANT -DSQLITE_THREADSAFE=2 -DSQLITE_OMIT_LOAD_EXTENSION $DEBUG_PARAM -lpthread -lsqlite3 && \
@@ -65,7 +66,7 @@ function build_lib {
 	cd ../ && \
 	echo "library: making archive..." && \
 	rm -f libpac.a
-	ar -crv libpac.a app.o crc.o timef.o udp.o util.o dbl.o configl.o logl.o acp/main.o acp/mobile.o && echo "library: done"
+	ar -crv libpac.a app.o crc.o timef.o udp.o util.o tsv.o dbl.o configl.o logl.o acp/main.o acp/mobile.o && echo "library: done"
 	rm -f *.o acp/*.o
 }
 

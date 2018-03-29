@@ -8,6 +8,7 @@
 #include "lib/app.h"
 #include "lib/timef.h"
 #include "lib/udp.h"
+#include "lib/tsv.h"
 #include "lib/acp/main.h"
 #include "lib/acp/app.h"
 #include "lib/acp/chv.h"
@@ -33,16 +34,12 @@
 #define PROG_LIST_LOOP_ST {Prog *item = prog_list.top; while (item != NULL) {
 #define PROG_LIST_LOOP_SP item = item->next; } item = prog_list.top;}
 
-#define SNR_VALUE item->sensor_fts.value.value
-#define SNR_STATE item->sensor_fts.value.state
+#define SNR_VALUE item->sensor.value.value
+#define SNR_STATE item->sensor.value.state
 #define GOOD_VALUE item->good_value
 #define DELTA item->good_delta
 #define GOOD_CONDITION SNR_STATE && (SNR_VALUE <= GOOD_VALUE+DELTA) && (SNR_VALUE >= GOOD_VALUE-DELTA)
 #define BAD_CONDITION !SNR_STATE || (SNR_VALUE > GOOD_VALUE+DELTA) || (SNR_VALUE < GOOD_VALUE-DELTA)
-#define STATUS_SUCCESS "success"
-#define STATUS_FAILURE "failure"
-
-#define PROG_FIELDS "id,description,sensor_fts_id,call_peer_id,good_value,good_delta,check_interval,cope_duration,phone_number_group_id,sms,ring,enable,load"
 
 enum {
     INIT,
@@ -57,23 +54,18 @@ enum {
 
 struct prog_st {
     int id;
-    char * description;
-    SensorFTS sensor_fts;
-    Peer call_peer;
-    int phone_number_group_id;
+    SensorFTS sensor;
+    EM em;
     double good_value;
     double good_delta;
     struct timespec check_interval;
     struct timespec cope_duration;
-    int sms;
-    int ring;
 
     char state;
     Ton_ts tmr_check;
     Ton_ts tmr_cope;
 
     struct timespec cycle_duration;
-    int log_limit;
     int sock_fd;
 
     pthread_t thread;

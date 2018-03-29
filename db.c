@@ -28,14 +28,16 @@ int addProgById(int prog_id, ProgList *list, PeerList *peer_list, sqlite3 *db_da
     Prog *rprog = getProgById(prog_id, list);
     if (rprog != NULL) {//program is already running
 #ifdef MODE_DEBUG
-        fprintf(stderr, "addProgById(): program with id = %d is being controlled by program\n", rprog->id);
+        fprintf(stderr, "%s(): program with id = %d is being controlled by program\n", F, rprog->id);
 #endif
         return 0;
     }
 
     Prog *item = malloc(sizeof *(item));
     if (item == NULL) {
-        fputs("addProgById(): failed to allocate memory\n", stderr);
+#ifdef MODE_DEBUG
+        fprintf(stderr, "%s(): failed to allocate memory for program with id=%d\n", F, prog_id);
+#endif
         return 0;
     }
     memset(item, 0, sizeof *item);
@@ -43,7 +45,6 @@ int addProgById(int prog_id, ProgList *list, PeerList *peer_list, sqlite3 *db_da
     item->next = NULL;
 
     item->cycle_duration = cycle_duration;
-    item->log_limit = log_limit;
 
     if (!initMutex(&item->mutex)) {
         free(item);
@@ -60,26 +61,23 @@ int addProgById(int prog_id, ProgList *list, PeerList *peer_list, sqlite3 *db_da
         free(item);
         return 0;
     }
-    item->sensor_fts.peer.fd = &item->sock_fd;
-    item->call_peer.fd = &item->sock_fd;
+    item->sensor.peer.fd = &item->sock_fd;
+    item->em.peer.fd = &item->sock_fd;
     if (!checkProg(item)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
-        free(item->description);
         free(item);
         return 0;
     }
     if (!addProg(item, list)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
-        free(item->description);
         free(item);
         return 0;
     }
     if (!createMThread(&item->thread, &threadFunction, item)) {
         freeSocketFd(&item->sock_fd);
         freeMutex(&item->mutex);
-        free(item->description);
         free(item);
         return 0;
     }
@@ -109,7 +107,7 @@ int deleteProgById(int id, ProgList *list, char* db_data_path) {
             }
             list->length--;
             stopProgThread(curr);
-            db_saveTableFieldInt("prog","load",curr->id, 0, NULL, db_data_path);
+            db_saveTableFieldInt("prog", "load", curr->id, 0, NULL, db_data_path);
             freeProg(curr);
 #ifdef MODE_DEBUG
             printf("prog with id: %d deleted from prog_list\n", id);
@@ -145,9 +143,6 @@ int loadActiveProg(ProgList *list, PeerList *peer_list, char *db_path) {
     ProgData data = {.prog_list = list, .peer_list = peer_list, .db_data = db};
     char *q = "select id from prog where load=1";
     if (!db_exec(db, q, loadActiveProg_callback, &data)) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "loadActiveProg(): query failed: %s\n", q);
-#endif
         sqlite3_close(db);
         return 0;
     }
@@ -155,55 +150,23 @@ int loadActiveProg(ProgList *list, PeerList *peer_list, char *db_path) {
     return 1;
 }
 
-int callHuman(Prog *item, char *message, Peer *peer, const char *db_path) {
-    S1List pn_list;
-    if (!config_getPhoneNumberListO(&pn_list, db_path)) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "callHuman: error while reading phone book\n");
-#endif
-        return 0;
-    }
-    if (item->sms) {
-        for (int i = 0; i < pn_list.length; i++) {
-            acp_sendSMS(peer, &pn_list.item[LINE_SIZE * i], message);
-        }
-    }
-    if (item->ring) {
-        for (int i = 0; i < pn_list.length; i++) {
-            acp_makeCall(peer, &pn_list.item[LINE_SIZE * i]);
-        }
-    }
-    FREE_LIST(&pn_list);
-    return 1;
-}
-
 int getProg_callback(void *d, int argc, char **argv, char **azColName) {
     ProgData * data = d;
     Prog *item = data->prog;
     int load = 0, enable = 0;
-    int c=0;
+    int c = 0;
     for (int i = 0; i < argc; i++) {
         if (DB_COLUMN_IS("id")) {
             item->id = atoi(DB_COLUMN_VALUE);
             c++;
-        } else if (DB_COLUMN_IS("sensor_fts_id")) {
-            if (!config_getSensorFTS(&item->sensor_fts, atoi(DB_COLUMN_VALUE), data->peer_list, data->db_data)) {
-                free(item);
-                return 1;
+        } else if (DB_COLUMN_IS("sensor_id")) {
+            if (!config_getSensorFTS(&item->sensor, atoi(DB_COLUMN_VALUE), data->peer_list, data->db_data)) {
+                item->sensor.peer.fd=NULL;
             }
             c++;
-        } else if (DB_COLUMN_IS("call_peer_id")) {
-            Peer *peer = getPeerById(DB_COLUMN_VALUE, data->peer_list);
-            if (peer == NULL) {
-                return EXIT_FAILURE;
-            }
-            item->call_peer = *peer;
-            c++;
-        } else if (DB_COLUMN_IS("description")) {
-            strcpyma(&item->description,DB_COLUMN_VALUE);
-            if (item->description == NULL) {
-                fprintf(stderr, "%s(): failed to allocate memory for description\n", F);
-                return EXIT_FAILURE;
+        } else if (DB_COLUMN_IS("em_id")) {
+            if (!config_getEM(&item->em, atoi(DB_COLUMN_VALUE), data->peer_list, data->db_data)) {
+                item->em.peer.fd=NULL;
             }
             c++;
         } else if (DB_COLUMN_IS("good_value")) {
@@ -212,22 +175,13 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
         } else if (DB_COLUMN_IS("good_delta")) {
             item->good_delta = atof(DB_COLUMN_VALUE);
             c++;
-        } else if (DB_COLUMN_IS("check_interval")) {
+        } else if (DB_COLUMN_IS("check_interval_sec")) {
             item->check_interval.tv_nsec = 0;
             item->check_interval.tv_sec = atoi(DB_COLUMN_VALUE);
             c++;
-        } else if (DB_COLUMN_IS("cope_duration")) {
+        } else if (DB_COLUMN_IS("cope_duration_sec")) {
             item->cope_duration.tv_nsec = 0;
             item->cope_duration.tv_sec = atoi(DB_COLUMN_VALUE);
-            c++;
-        } else if (DB_COLUMN_IS("phone_number_group_id")) {
-            item->phone_number_group_id = atoi(DB_COLUMN_VALUE);
-            c++;
-        } else if (DB_COLUMN_IS("sms")) {
-            item->sms = atoi(DB_COLUMN_VALUE);
-            c++;
-        } else if (DB_COLUMN_IS("ring")) {
-            item->ring = atoi(DB_COLUMN_VALUE);
             c++;
         } else if (DB_COLUMN_IS("enable")) {
             enable = atoi(DB_COLUMN_VALUE);
@@ -236,13 +190,12 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
             load = atoi(DB_COLUMN_VALUE);
             c++;
         } else {
-            fprintf(stderr,"%s(): unknown column: %s\n", F,DB_COLUMN_NAME);
-            c++;
+            fprintf(stderr, "%s(): unknown column: %s\n", F, DB_COLUMN_NAME);
         }
     }
-#define N 13
+#define N 9
     if (c != N) {
-        fprintf(stderr, "%s(): required %d columns but %d found\n", F,N, c);
+        fprintf(stderr, "%s(): required %d columns but %d found\n", F, N, c);
         return EXIT_FAILURE;
     }
 #undef N
@@ -252,7 +205,7 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
         item->state = DISABLE;
     }
     if (!load) {
-        db_saveTableFieldInt("prog","load",item->id, 1, data->db_data, NULL);
+        db_saveTableFieldInt("prog", "load", item->id, 1, data->db_data, NULL);
     }
     return EXIT_SUCCESS;
 }
@@ -260,30 +213,28 @@ int getProg_callback(void *d, int argc, char **argv, char **azColName) {
 int getProgByIdFDB(int prog_id, Prog *item, PeerList *peer_list, sqlite3 *dbl, const char *db_path) {
     if (dbl != NULL && db_path != NULL) {
 #ifdef MODE_DEBUG
-        fprintf(stderr, "getProgByIdFDB(): db xor db_path expected\n");
+        fprintf(stderr, "%s(): db xor db_path expected\n",F);
 #endif
         return 0;
     }
-    sqlite3 *db;int close=0;
+    sqlite3 *db;
+    int close = 0;
     if (db_path != NULL) {
         if (!db_open(db_path, &db)) {
             return 0;
         }
-        close=1;
+        close = 1;
     } else {
         db = dbl;
     }
     char q[LINE_SIZE];
     ProgData data = {.peer_list = peer_list, .prog = item, .db_data = db};
-    snprintf(q, sizeof q, "select " PROG_FIELDS " from prog where id=%d", prog_id);
+    snprintf(q, sizeof q, "select * from prog where id=%d", prog_id);
     if (!db_exec(db, q, getProg_callback, &data)) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "getProgByIdFDB(): query failed: %s\n", q);
-#endif
-        if(close)sqlite3_close(db);
+        if (close)sqlite3_close(db);
         return 0;
     }
-    if(close)sqlite3_close(db);
+    if (close)sqlite3_close(db);
     return 1;
 }
 

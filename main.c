@@ -3,88 +3,44 @@
 
 int app_state = APP_INIT;
 
+TSVresult config_tsv = TSVRESULT_INITIALIZER;
 char * db_data_path;
-char * db_log_path;
-char * db_public_path;
 
 int sock_port = -1;
 int sock_fd = -1;
-int log_limit = 0;
 
 Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 struct timespec cycle_duration = {0, 0};
 
 Mutex progl_mutex = MUTEX_INITIALIZER;
 Mutex db_data_mutex = MUTEX_INITIALIZER;
-Mutex db_public_mutex = MUTEX_INITIALIZER;
 
-PeerList peer_list;
-ProgList prog_list = {NULL, NULL, 0};
+PeerList peer_list = LIST_INITIALIZER;
+ProgList prog_list = LLIST_INITIALIZER;
 
 #include "util.c"
 #include "db.c"
 
-int readSettings() {
-    FILE* stream = fopen(CONFIG_FILE, "r");
-    if (stream == NULL) {
-#ifdef MODE_DEBUG
-        perror("readSettings()");
-#endif
+int readSettings(TSVresult* r, const char *data_path, int *port, struct timespec *cd, char **db_data_path) {
+    if (!TSVinit(r, data_path)) {
         return 0;
     }
-    char s[LINE_SIZE];
-    fgets(s, LINE_SIZE, stream);
-    int n;
-    char db_data_path_temp[LINE_SIZE];
-    char db_log_path_temp[LINE_SIZE];
-    char db_public_path_temp[LINE_SIZE];
-    n = fscanf(stream, "%d\t%ld\t%ld\t%d\t%255s\t%255s\t%255s\n",
-            &sock_port,
-            &cycle_duration.tv_sec,
-            &cycle_duration.tv_nsec,
-            &log_limit,
-            db_data_path_temp,
-            db_public_path_temp,
-            db_log_path_temp
-
-            );
-    if (n != 7) {
-        fclose(stream);
-#ifdef MODE_DEBUG
-        fprintf(stderr, "%s(): bad row format\n", F);
-#endif
+    int _port = TSVgetis(r, 0, "port");
+    int _cd_sec = TSVgetis(r, 0, "cd_sec");
+    int _cd_nsec = TSVgetis(r, 0, "cd_nsec");
+    char *_db_data_path = TSVgetvalues(r, 0, "db_data_path");
+    if (TSVnullreturned(r)) {
         return 0;
     }
-    fclose(stream);
-    strcpyma(&db_data_path, db_data_path_temp);
-    if (db_data_path == NULL) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "%s(): failed to allocate memory for db_data_path\n", F);
-#endif
-        return 0;
-    }
-    strcpyma(&db_public_path, db_public_path_temp);
-    if (db_public_path == NULL) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "%s(): failed to allocate memory for db_public_path\n", F);
-#endif
-        return 0;
-    }
-    strcpyma(&db_log_path, db_log_path_temp);
-    if (db_log_path == NULL) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "%s(): failed to allocate memory for db_log_path\n", F);
-#endif
-        return 0;
-    }
-#ifdef MODE_DEBUG
-    printf("%s: \n\tsock_port: %d, \n\tcycle_duration: %ld sec %ld nsec, \n\tlog_limit: %d, \n\tdb_data_path: %s, \n\tdb_public_path: %s, \n\tdb_log_path: %s\n", F, sock_port, cycle_duration.tv_sec, cycle_duration.tv_nsec, log_limit, db_data_path, db_public_path, db_log_path);
-#endif
+    *port = _port;
+    cd->tv_sec = _cd_sec;
+    cd->tv_nsec = _cd_nsec;
+    *db_data_path = _db_data_path;
     return 1;
 }
 
 int initData() {
-    if (!config_getPeerList(&peer_list, NULL, db_public_path)) {
+    if (!config_getPeerList(&peer_list, NULL, db_data_path)) {
         return 0;
     }
     if (!loadActiveProg(&prog_list, &peer_list, db_data_path)) {
@@ -96,7 +52,7 @@ int initData() {
 }
 
 void initApp() {
-    if (!readSettings()) {
+    if (!readSettings(&config_tsv, CONFIG_FILE, &sock_port, &cycle_duration, &db_data_path)) {
         exit_nicely_e("initApp: failed to read settings\n");
     }
     if (!initMutex(&progl_mutex)) {
@@ -104,9 +60,6 @@ void initApp() {
     }
     if (!initMutex(&db_data_mutex)) {
         exit_nicely_e("initApp: failed to initialize db_data_mutex\n");
-    }
-    if (!initMutex(&db_public_mutex)) {
-        exit_nicely_e("initApp: failed to initialize db_public_mutex\n");
     }
     if (!initServer(&sock_fd, sock_port)) {
         exit_nicely_e("initApp: failed to initialize udp server\n");
@@ -275,36 +228,6 @@ void serverRun(int *state, int init_state) {
             }
         }
         return;
-    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_SMS)) {
-        for (int i = 0; i < i2l.length; i++) {
-            Prog *item = getProgById(i2l.item[i].p0, &prog_list);
-            if (item != NULL) {
-                if (lockMutex(&item->mutex)) {
-                    item->sms = i2l.item[i].p1;
-                    unlockMutex(&item->mutex);
-                }
-            }
-            if (lockMutex(&db_data_mutex)) {
-                db_saveTableFieldInt("prog", "sms", i2l.item[i].p0, i2l.item[i].p1, NULL, db_data_path);
-                unlockMutex(&db_data_mutex);
-            }
-        }
-        return;
-    } else if (ACP_CMD_IS(ACP_CMD_CHV_PROG_SET_RING)) {
-        for (int i = 0; i < i2l.length; i++) {
-            Prog *item = getProgById(i2l.item[i].p0, &prog_list);
-            if (item != NULL) {
-                if (lockMutex(&item->mutex)) {
-                    item->ring = i2l.item[i].p1;
-                    unlockMutex(&item->mutex);
-                }
-            }
-            if (lockMutex(&db_data_mutex)) {
-                db_saveTableFieldInt("prog", "ring", i2l.item[i].p0, i2l.item[i].p1, NULL, db_data_path);
-                unlockMutex(&db_data_mutex);
-            }
-        }
-        return;
     }
     acp_responseSend(&response, &peer_client);
 }
@@ -317,46 +240,36 @@ void progControl(Prog *item) {
             item->state = WBAD;
             break;
         case WBAD:
+            acp_setEMDutyCycleR(&item->em, GOOD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }
-            acp_readSensorFTS(&item->sensor_fts);
+            acp_readSensorFTS(&item->sensor);
             if (BAD_CONDITION) {
                 item->state = WCOPE;
             }
             break;
         case WCOPE:
+            acp_setEMDutyCycleR(&item->em, GOOD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }
-            acp_readSensorFTS(&item->sensor_fts);
+            acp_readSensorFTS(&item->sensor);
             if (GOOD_CONDITION) {
                 item->tmr_check.ready = 0;
                 item->tmr_cope.ready = 0;
                 item->state = WBAD;
             }
             if (ton_ts(item->cope_duration, &item->tmr_cope)) {
-                char msg[LINE_SIZE];
-                snprintf(msg, sizeof msg, "kontrol parametrov: %s", item->description);
-
-                if (lockMutex(&db_data_mutex)) {
-                    log_saveAlert(msg, item->log_limit, db_log_path);
-                    unlockMutex(&db_data_mutex);
-                }
-
-                if (lockMutex(&db_public_mutex)) {
-                    callHuman(item, msg, &item->call_peer, db_public_path);
-                    unlockMutex(&db_public_mutex);
-                }
-
                 item->state = WGOOD;
             }
             break;
         case WGOOD:
+            acp_setEMDutyCycleR(&item->em, BAD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }
-            acp_readSensorFTS(&item->sensor_fts);
+            acp_readSensorFTS(&item->sensor);
             if (GOOD_CONDITION) {
                 item->state = WBAD;
             }
@@ -377,7 +290,7 @@ void progControl(Prog *item) {
     char *state = getStateStr(item->state);
     struct timespec tm1 = getTimeRestCheck(item);
     struct timespec tm2 = getTimeRestCope(item);
-    printf("progControl: id=%d state=%s expected=%.1f delta=%.1f real=%.1f check_time_rest=%ldsec alert_time_rest=%ldsec\n", item->id, state, item->good_value, item->good_delta, item->sensor_fts.value.value, tm1.tv_sec, tm2.tv_sec);
+    printf("progControl: id=%d state=%s expected=%.1f delta=%.1f real=%.1f check_time_rest=%ldsec alert_time_rest=%ldsec\n", item->id, state, item->good_value, item->good_delta, item->sensor.value.value, tm1.tv_sec, tm2.tv_sec);
 #endif
 }
 
@@ -422,10 +335,7 @@ void freeApp() {
     freeSocketFd(&sock_fd);
     freeMutex(&progl_mutex);
     freeMutex(&db_data_mutex);
-    freeMutex(&db_public_mutex);
-    free(db_data_path);
-    free(db_log_path);
-    free(db_public_path);
+    TSVclear(&config_tsv);
 }
 
 void exit_nicely() {
