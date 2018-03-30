@@ -3,7 +3,7 @@
 int addProg(Prog *item, ProgList *list) {
     if (list->length >= INT_MAX) {
 #ifdef MODE_DEBUG
-        fprintf(stderr, "addProg: ERROR: can not load prog with id=%d - list length exceeded\n", item->id);
+        fprintf(stderr, "%s(): can not load prog with id=%d - list length exceeded\n",F, item->id);
 #endif
         return 0;
     }
@@ -19,7 +19,7 @@ int addProg(Prog *item, ProgList *list) {
     list->last = item;
     list->length++;
 #ifdef MODE_DEBUG
-    printf("addProg: prog with id=%d loaded\n", item->id);
+     printf("%s(): prog with id=%d loaded\n", F,item->id);
 #endif
     return 1;
 }
@@ -129,7 +129,7 @@ int loadActiveProg_callback(void *d, int argc, char **argv, char **azColName) {
             int id = atoi(DB_COLUMN_VALUE);
             addProgById(id, data->prog_list, data->peer_list, data->db_data, NULL);
         } else {
-            fputs("loadActiveProg_callback(): unknown column\n", stderr);
+            fprintf(stderr,"%s(): unknown column: %s\n", F, DB_COLUMN_NAME);
         }
     }
     return EXIT_SUCCESS;

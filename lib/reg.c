@@ -33,7 +33,7 @@ int reg_controlEM(EM *item, float output) {
     if (item == NULL) {
         return 0;
     }
-    return acp_setEMDutyCycleR(item, output);
+    return acp_setEMFloat(item, output);
 }
 
 static int getRegSecureList_callback(void *data, int argc, char **argv, char **azColName) {

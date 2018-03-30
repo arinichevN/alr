@@ -240,7 +240,7 @@ void progControl(Prog *item) {
             item->state = WBAD;
             break;
         case WBAD:
-            acp_setEMDutyCycleR(&item->em, GOOD_FLOAT);
+            acp_setEMFloat(&item->em, GOOD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }
@@ -250,7 +250,7 @@ void progControl(Prog *item) {
             }
             break;
         case WCOPE:
-            acp_setEMDutyCycleR(&item->em, GOOD_FLOAT);
+            acp_setEMFloat(&item->em, GOOD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }
@@ -265,7 +265,7 @@ void progControl(Prog *item) {
             }
             break;
         case WGOOD:
-            acp_setEMDutyCycleR(&item->em, BAD_FLOAT);
+            acp_setEMFloat(&item->em, BAD_FLOAT);
             if (!ton_ts(item->check_interval, &item->tmr_check)) {
                 break;
             }

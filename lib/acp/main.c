@@ -796,10 +796,22 @@ FUN_ACP_RESPONSE_READ(I1List)
 FUN_ACP_RESPONSE_READ(I2List)
 FUN_ACP_RESPONSE_READ(I1F1List)
 FUN_ACP_RESPONSE_READ(FTSList)
-int acp_setEMOutput(EM *em, int output) {
-    if (output == ((int) em->last_output)) {
+
+int acp_setEMFloat(EM *em, float output) {
+    I1F1 di[1];
+    di[0].p0 = em->remote_id;
+    di[0].p1 = output;
+    I1F1List data = {di, 1, 1};
+    if (!acp_requestSendUnrequitedI1F1List(ACP_CMD_SET_FLOAT, &data, &em->peer)) {
+        printde("failed to send request where em.id = %d\n", em->id);
         return 0;
     }
+    em->last_output = output;
+    return 1;
+
+}
+
+int acp_setEMInt(EM *em, int output) {
     I2 di[1];
     di[0].p0 = em->remote_id;
     di[0].p1 = output;
@@ -809,49 +821,6 @@ int acp_setEMOutput(EM *em, int output) {
         return 0;
     }
     em->last_output = (float) output;
-    return 1;
-}
-
-int acp_setEMDutyCycle(EM *em, float output) {
-    if (output == em->last_output) {
-        return 0;
-    }
-    I2 di[1];
-    di[0].p0 = em->remote_id;
-    di[0].p1 = (int) output;
-    I2List data = {di, 1, 1};
-    if (!acp_requestSendUnrequitedI2List(ACP_CMD_SET_PWM_DUTY_CYCLE, &data, &em->peer)) {
-        printde("failed to send request where em.id = %d\n", em->id);
-        return 0;
-    }
-    em->last_output = output;
-    return 1;
-
-}
-
-int acp_setEMOutputR(EM *em, int output) {
-    I2 di[1];
-    di[0].p0 = em->remote_id;
-    di[0].p1 = output;
-    I2List data = {di, 1, 1};
-    if (!acp_requestSendUnrequitedI2List(ACP_CMD_SET_INT, &data, &em->peer)) {
-        printde("failed to send request where em.id = %d\n", em->id);
-        return 0;
-    }
-    em->last_output = (float) output;
-    return 1;
-}
-
-int acp_setEMDutyCycleR(EM *em, float output) {
-    I2 di[1];
-    di[0].p0 = em->remote_id;
-    di[0].p1 = (int) output;
-    I2List data = {di, 1, 1};
-    if (!acp_requestSendUnrequitedI2List(ACP_CMD_SET_PWM_DUTY_CYCLE, &data, &em->peer)) {
-        printde("failed to send request where em.id = %d\n", em->id);
-        return 0;
-    }
-    em->last_output = output;
     return 1;
 }
 

@@ -263,13 +263,9 @@ DEC_FUN_ACP_RESPONSE_READ(I1F1List)
 
 DEC_FUN_ACP_RESPONSE_READ(FTSList)
 
-extern int acp_setEMOutput(EM *em, int output) ;
+extern int acp_setEMFloat(EM *em, float output) ;
 
-extern int acp_setEMDutyCycle(EM *em, float output) ;
-
-extern int acp_setEMOutputR(EM *em, int output) ;
-
-extern int acp_setEMDutyCycleR(EM *em, float output) ;
+extern int acp_setEMInt(EM *em, int output) ;
 
 extern int acp_readSensorInt(SensorInt *s) ;
 
